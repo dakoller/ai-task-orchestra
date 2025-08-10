@@ -1,0 +1,20 @@
+name: ollama-inference
+description: Run inference with specified model and prompt
+parameters:
+  - name: model
+    type: string
+    required: true
+    description: Ollama model name
+  - name: prompt
+    type: string
+    required: true
+    description: Prompt for the model
+  - name: system_prompt
+    type: string
+    required: false
+    description: Optional system prompt
+steps:
+  - type: ollama_generate
+    model: "{{model}}"
+    prompt: "{{prompt}}"
+    system: "{{system_prompt}}"

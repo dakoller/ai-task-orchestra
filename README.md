@@ -5,7 +5,7 @@
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 [![GitHub Stars](https://img.shields.io/github/stars/[username]/ai-task-orchestra?style=social)](https://github.com/[username]/ai-task-orchestra)
 
-> **🚧 Early Development - v0.1.0 Coming Soon**  
+> **🚧 Alpha Release - v0.1.0**  
 > This project is in active development. Star the repo to follow progress!
 
 An open-source task scheduler and orchestrator designed specifically for self-hosted AI workloads. Optimize your GPU usage, manage task dependencies, and automate complex AI workflows with intelligent resource management.
@@ -29,7 +29,25 @@ An open-source task scheduler and orchestrator designed specifically for self-ho
 - **Small teams** sharing AI infrastructure efficiently
 - **Anyone** tired of manual model management and resource waste
 
-## 🚀 Quick Preview
+## 🚀 Quick Start
+
+### Using Docker Compose (Recommended)
+
+The easiest way to get started is with Docker Compose:
+
+```bash
+# Clone the repository
+git clone https://github.com/[username]/ai-task-orchestra.git
+cd ai-task-orchestra
+
+# Start the services
+docker-compose up -d
+
+# Check the API status
+curl http://localhost:8000/health
+```
+
+### Submit a Task
 
 ```bash
 # Submit a task via REST API
@@ -46,6 +64,14 @@ curl -X POST http://localhost:8000/api/v1/tasks \
 
 # Check your queue
 curl http://localhost:8000/api/v1/tasks
+```
+
+### API Documentation
+
+Once the server is running, you can access the OpenAPI documentation at:
+
+```
+http://localhost:8000/docs
 ```
 
 ## 🎼 Key Features (Planned)
@@ -113,24 +139,31 @@ depends_on: ["log-collection-task"]
 
 ## 🛠️ Installation & Setup
 
-> **Coming Soon**: Full installation guide will be available with v0.1.0 release
-
-### Quick Start (Planned)
-```bash
-# Clone and start the orchestra
-git clone https://github.com/[username]/ai-task-orchestra.git
-cd ai-task-orchestra
-docker-compose up -d
-
-# Access the dashboard
-open http://localhost:8000
-```
-
 ### Requirements
 - Docker & Docker Compose
 - Ollama (or other supported AI backend)
 - 8GB+ RAM recommended
 - GPU support optional but recommended
+
+### Development Setup
+
+If you want to set up a development environment:
+
+```bash
+# Clone the repository
+git clone https://github.com/[username]/ai-task-orchestra.git
+cd ai-task-orchestra
+
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -e ".[dev]"
+
+# Run the API server
+uvicorn ai_task_orchestra.main:app --reload
+```
 
 ## 🤝 Contributing
 
@@ -162,18 +195,19 @@ pre-commit install
 
 ## 🗺️ Roadmap
 
-### v0.1.0 - Core Foundation *(Q4 2025)*
-- ✅ Basic task scheduling and execution
-- ✅ Ollama integration  
-- ✅ YAML template system
-- ✅ REST API with OpenAPI docs
+### v0.1.0 - Alpha Release *(Q4 2025)*
+- ✅ Core API endpoints functional
+- ✅ Basic Ollama integration
+- ✅ Initial task templates
 - ✅ Docker Compose deployment
+- ✅ Initial documentation
 
-### v0.2.0 - Enhanced UI *(Q1 2026)*
+### v0.2.0 - Beta Release *(Q1 2026)*
 - 🔄 Web dashboard for queue management
 - 🔄 Task dependency visualization
 - 🔄 Resource usage monitoring
 - 🔄 Manual task reordering
+- 🔄 Comprehensive documentation
 
 ### v0.3.0 - Community Features *(Q2 2026)*
 - 🔄 Template marketplace/sharing

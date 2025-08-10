@@ -1,0 +1,32 @@
+name: git-script-execution
+description: Clone repository, run script, store results
+parameters:
+  - name: repo_url
+    type: string
+    required: true
+    description: Git repository URL
+  - name: script_path
+    type: string
+    required: true
+    description: Path to script within repository
+  - name: output_path
+    type: string
+    required: true
+    description: Path to store output
+  - name: branch
+    type: string
+    required: false
+    description: Branch to checkout (default is main/master)
+  - name: script_args
+    type: string
+    required: false
+    description: Arguments to pass to the script
+steps:
+  - type: git_clone
+    repo: "{{repo_url}}"
+    branch: "{{branch}}"
+  - type: execute_script
+    script: "{{script_path}}"
+    args: "{{script_args}}"
+  - type: store_result
+    path: "{{output_path}}"

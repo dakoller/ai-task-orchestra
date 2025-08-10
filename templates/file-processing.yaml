@@ -1,0 +1,32 @@
+name: file-processing
+description: Process files with AI analysis
+parameters:
+  - name: input_files
+    type: array
+    required: true
+    description: List of files to process
+  - name: analysis_model
+    type: string
+    required: true
+    description: Model to use for analysis
+  - name: output_format
+    type: string
+    required: true
+    description: Format for the output (json, markdown, text)
+  - name: analysis_prompt
+    type: string
+    required: false
+    description: Custom prompt for analysis
+  - name: max_tokens
+    type: integer
+    required: false
+    description: Maximum number of tokens to generate
+steps:
+  - type: read_files
+    files: "{{input_files}}"
+  - type: ollama_analyze
+    model: "{{analysis_model}}"
+    prompt: "{{analysis_prompt}}"
+    max_tokens: "{{max_tokens}}"
+  - type: format_output
+    format: "{{output_format}}"
