@@ -56,7 +56,7 @@ curl -X POST http://localhost:8000/api/v1/tasks \
   -d '{
     "template": "ollama-inference", 
     "parameters": {
-      "model": "llama3.1:8b",
+      "model": "tinyllama:latest",
       "prompt": "Explain quantum computing in simple terms"
     },
     "priority": 5

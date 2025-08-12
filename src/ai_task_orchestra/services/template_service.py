@@ -116,33 +116,50 @@ class TemplateService:
         Raises:
             HTTPException: If the template is not found
         """
-        template = self.get_template(template_name)
+        logger.info(f"Validating parameters for template: {template_name}")
+        logger.info(f"Parameters: {parameters}")
         
-        # Check for missing required parameters
-        missing_parameters = []
-        for param in template.parameters:
-            if param.required and param.name not in parameters:
-                missing_parameters.append(param.name)
-        
-        # Check for invalid parameters
-        invalid_parameters = []
-        for param_name, param_value in parameters.items():
-            # Find the parameter definition
-            param_def = next((p for p in template.parameters if p.name == param_name), None)
+        try:
+            template = self.get_template(template_name)
+            logger.info(f"Template found: {template}")
             
-            # If the parameter is not defined in the template, it's invalid
-            if not param_def:
-                invalid_parameters.append(param_name)
-                continue
+            # Check for missing required parameters
+            missing_parameters = []
+            for param in template.parameters:
+                logger.info(f"Checking parameter: {param.name}, required: {param.required}")
+                if param.required and param.name not in parameters:
+                    logger.warning(f"Missing required parameter: {param.name}")
+                    missing_parameters.append(param.name)
             
-            # TODO: Add type validation based on param_def.type
-        
-        # Return validation result
-        return {
-            "valid": len(missing_parameters) == 0 and len(invalid_parameters) == 0,
-            "missing_parameters": missing_parameters,
-            "invalid_parameters": invalid_parameters,
-        }
+            # Check for invalid parameters
+            invalid_parameters = []
+            for param_name, param_value in parameters.items():
+                logger.info(f"Validating parameter: {param_name} = {param_value}")
+                
+                # Find the parameter definition
+                param_def = next((p for p in template.parameters if p.name == param_name), None)
+                
+                # If the parameter is not defined in the template, it's invalid
+                if not param_def:
+                    logger.warning(f"Invalid parameter: {param_name}")
+                    invalid_parameters.append(param_name)
+                    continue
+                
+                # TODO: Add type validation based on param_def.type
+                logger.info(f"Parameter {param_name} is valid")
+            
+            # Return validation result
+            result = {
+                "valid": len(missing_parameters) == 0 and len(invalid_parameters) == 0,
+                "missing_parameters": missing_parameters,
+                "invalid_parameters": invalid_parameters,
+            }
+            logger.info(f"Validation result: {result}")
+            return result
+        except Exception as e:
+            logger.error(f"Error validating parameters: {str(e)}")
+            logger.exception("Parameter validation failed")
+            raise
 
 
 def get_template_service() -> TemplateService:

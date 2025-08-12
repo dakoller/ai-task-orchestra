@@ -24,6 +24,9 @@ class Settings(BaseSettings):
 
     # Ollama Configuration
     ollama_api_base_url: str = Field("http://localhost:11434", env="OLLAMA_API_BASE_URL")
+    ollama_api_key: Optional[str] = Field(None, env="OLLAMA_API_KEY")
+    ollama_timeout: int = Field(30, env="OLLAMA_TIMEOUT")
+    ollama_default_model: str = Field("llama3", env="OLLAMA_DEFAULT_MODEL")
 
     # Logging Configuration
     log_level: str = Field("INFO", env="LOG_LEVEL")
@@ -41,6 +44,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="allow",
     )
 
     def dict_for_celery(self) -> Dict[str, Any]:

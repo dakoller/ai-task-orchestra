@@ -1,5 +1,6 @@
 """Tasks API endpoints."""
 
+import logging
 from typing import Dict, List, Optional
 from uuid import UUID
 
@@ -34,12 +35,26 @@ async def create_task(
     - **priority**: Task priority (1-10, default: 5)
     - **depends_on**: List of task IDs this task depends on
     """
-    return await task_service.create_task(
-        template_name=task.template,
-        parameters=task.parameters,
-        priority=task.priority,
-        depends_on=task.depends_on,
-    )
+    # Add diagnostic logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Creating task with template: {task.template}")
+    logger.info(f"Task parameters: {task.parameters}")
+    logger.info(f"Task priority: {task.priority}")
+    logger.info(f"Task dependencies: {task.depends_on}")
+    
+    try:
+        result = await task_service.create_task(
+            template_name=task.template,
+            parameters=task.parameters,
+            priority=task.priority,
+            depends_on=task.depends_on,
+        )
+        logger.info(f"Task created successfully: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Error creating task: {str(e)}")
+        logger.exception("Task creation failed")
+        raise
 
 
 @router.get("/")
@@ -64,6 +79,42 @@ async def list_tasks(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/status", summary="Get current tasks with execution status")
+async def get_tasks_status(
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, List[Dict]]:
+    """
+    Get current tasks grouped by execution status.
+
+    Returns a dictionary with tasks grouped by their status:
+    - queued: Tasks waiting to be executed
+    - running: Tasks currently being executed
+    - completed: Tasks that have been successfully completed
+    - failed: Tasks that have failed
+    - cancelled: Tasks that have been cancelled
+    
+    Each task includes its ID, template name, creation time, and other relevant details.
+    """
+    # Get all tasks
+    all_tasks = await task_service.list_tasks(limit=1000)
+    
+    # Group tasks by status
+    tasks_by_status = {
+        "queued": [],
+        "running": [],
+        "completed": [],
+        "failed": [],
+        "cancelled": []
+    }
+    
+    for task in all_tasks:
+        status = task.get("status", "unknown")
+        if status in tasks_by_status:
+            tasks_by_status[status].append(task)
+    
+    return tasks_by_status
 
 
 @router.get("/{task_id}")

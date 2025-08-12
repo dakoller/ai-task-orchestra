@@ -34,7 +34,8 @@ This will start the following services:
 - API server
 - Celery worker
 - Redis
-- Ollama
+
+Note: This setup assumes you have an existing Ollama instance running on your machine or accessible via network. The connection details are configured in the `.env` file.
 
 ### Manual Installation
 
@@ -81,6 +82,9 @@ AI Task Orchestra can be configured using environment variables or a `.env` file
 ### Ollama Configuration
 
 - `OLLAMA_API_BASE_URL`: Ollama API base URL (default: http://localhost:11434)
+- `OLLAMA_API_KEY`: API key for authentication with Ollama (default: none)
+- `OLLAMA_TIMEOUT`: Timeout for Ollama API requests in seconds (default: 30)
+- `OLLAMA_DEFAULT_MODEL`: Default model to use if not specified (default: llama3)
 
 ### Logging Configuration
 
@@ -103,7 +107,10 @@ API_DEBUG=true
 API_RELOAD=true
 DATABASE_URL=sqlite:///./ai_task_orchestra.db
 REDIS_URL=redis://redis:6379/0
-OLLAMA_API_BASE_URL=http://ollama:11434
+OLLAMA_API_BASE_URL=http://localhost:11434
+OLLAMA_API_KEY=
+OLLAMA_TIMEOUT=30
+OLLAMA_DEFAULT_MODEL=llama3
 LOG_LEVEL=INFO
 API_KEY=your-api-key-here
 ```
@@ -187,6 +194,16 @@ You can filter tasks by status and template:
 ```bash
 curl "http://localhost:8000/api/v1/tasks?status=queued&template=ollama-inference"
 ```
+
+### Getting Tasks by Execution Status
+
+To get all current tasks grouped by their execution status (queued, running, completed, failed, cancelled):
+
+```bash
+curl http://localhost:8000/api/v1/tasks/status
+```
+
+This endpoint returns a JSON object with tasks organized by their status, making it easy to monitor the current state of all tasks in the system.
 
 ### Getting Task Details
 

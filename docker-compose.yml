@@ -9,13 +9,14 @@ services:
       - "8000:8000"
     volumes:
       - ./templates:/app/templates
+      - ./.env:/app/.env
+    env_file:
+      - .env
     environment:
-      - OLLAMA_API_BASE_URL=http://ollama:11434
       - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=sqlite:///./ai_task_orchestra.db
     depends_on:
       - redis
-      - ollama
     restart: unless-stopped
     command: uvicorn ai_task_orchestra.main:app --host 0.0.0.0 --port 8000
 
@@ -25,13 +26,14 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./templates:/app/templates
+      - ./.env:/app/.env
+    env_file:
+      - .env
     environment:
-      - OLLAMA_API_BASE_URL=http://ollama:11434
       - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=sqlite:///./ai_task_orchestra.db
     depends_on:
       - redis
-      - ollama
     restart: unless-stopped
     command: celery -A ai_task_orchestra.worker.celery_app worker --loglevel=info
 
@@ -43,21 +45,5 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-
 volumes:
   redis_data:
-  ollama_data:

@@ -1,6 +1,7 @@
 """Task service for AI Task Orchestra."""
 
 import logging
+import traceback
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -43,42 +44,68 @@ class TaskService:
         Raises:
             HTTPException: If the template is not found or parameters are invalid
         """
-        # Validate template and parameters
-        template = self.template_service.get_template(template_name)
-        validation_result = self.template_service.validate_parameters(template_name, parameters)
+        logger.info(f"Creating task with template: {template_name}")
+        logger.info(f"Parameters: {parameters}")
+        logger.info(f"Priority: {priority}")
+        logger.info(f"Dependencies: {depends_on}")
         
-        if not validation_result["valid"]:
+        try:
+            # Validate template and parameters
+            logger.info("Getting template")
+            template = self.template_service.get_template(template_name)
+            logger.info(f"Template found: {template}")
+            
+            logger.info("Validating parameters")
+            validation_result = self.template_service.validate_parameters(template_name, parameters)
+            logger.info(f"Validation result: {validation_result}")
+            
+            if not validation_result["valid"]:
+                logger.error(f"Invalid parameters: {validation_result}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "message": "Invalid parameters",
+                        "missing_parameters": validation_result["missing_parameters"],
+                        "invalid_parameters": validation_result["invalid_parameters"],
+                    },
+                )
+            
+            # Create task
+            task_id = str(uuid.uuid4())
+            created_at = datetime.utcnow().isoformat() + "Z"
+            
+            logger.info(f"Creating task with ID: {task_id}")
+            task = {
+                "id": task_id,
+                "status": "queued",
+                "priority": priority,
+                "created_at": created_at,
+                "template": template_name,
+                "parameters": parameters,
+                "depends_on": depends_on or [],
+            }
+            
+            # Store task
+            logger.info(f"Storing task: {task}")
+            self.tasks[task_id] = task
+            
+            # Enqueue task if it has no dependencies
+            if not depends_on:
+                logger.info(f"Enqueueing task: {task_id}")
+                await self.enqueue_task(task_id)
+            
+            logger.info(f"Task created successfully: {task}")
+            return task
+        except HTTPException:
+            # Re-raise HTTP exceptions
+            raise
+        except Exception as e:
+            logger.error(f"Error creating task: {str(e)}")
+            logger.error(traceback.format_exc())
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={
-                    "message": "Invalid parameters",
-                    "missing_parameters": validation_result["missing_parameters"],
-                    "invalid_parameters": validation_result["invalid_parameters"],
-                },
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error creating task: {str(e)}",
             )
-        
-        # Create task
-        task_id = str(uuid.uuid4())
-        created_at = datetime.utcnow().isoformat() + "Z"
-        
-        task = {
-            "id": task_id,
-            "status": "queued",
-            "priority": priority,
-            "created_at": created_at,
-            "template": template_name,
-            "parameters": parameters,
-            "depends_on": depends_on or [],
-        }
-        
-        # Store task
-        self.tasks[task_id] = task
-        
-        # Enqueue task if it has no dependencies
-        if not depends_on:
-            await self.enqueue_task(task_id)
-        
-        return task
 
     async def get_task(self, task_id: str) -> Dict[str, Any]:
         """Get a task by ID.
@@ -190,26 +217,55 @@ class TaskService:
         Raises:
             HTTPException: If the task is not found
         """
-        task = await self.get_task(task_id)
+        logger.info(f"Enqueueing task: {task_id}")
         
-        # Only allow enqueueing queued tasks
-        if task["status"] != "queued":
+        try:
+            task = await self.get_task(task_id)
+            logger.info(f"Task found: {task}")
+            
+            # Only allow enqueueing queued tasks
+            if task["status"] != "queued":
+                logger.error(f"Cannot enqueue task with status: {task['status']}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot enqueue task with status '{task['status']}'",
+                )
+            
+            # Update status
+            logger.info("Updating task status to running")
+            task["status"] = "running"
+            task["started_at"] = datetime.utcnow().isoformat() + "Z"
+            
+            # Enqueue task
+            logger.info(f"Sending task to Celery: {task_id}")
+            try:
+                result = celery_app.send_task(
+                    "ai_task_orchestra.execute_task",
+                    args=[task_id, task["template"], task["parameters"]],
+                    kwargs={},
+                    priority=task["priority"],
+                )
+                logger.info(f"Task sent to Celery: {result}")
+            except Exception as e:
+                logger.error(f"Error sending task to Celery: {str(e)}")
+                logger.error(traceback.format_exc())
+                # Revert status
+                task["status"] = "queued"
+                if "started_at" in task:
+                    del task["started_at"]
+                raise
+                
+            logger.info(f"Task enqueued successfully: {task_id}")
+        except HTTPException:
+            # Re-raise HTTP exceptions
+            raise
+        except Exception as e:
+            logger.error(f"Error enqueueing task: {str(e)}")
+            logger.error(traceback.format_exc())
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Cannot enqueue task with status '{task['status']}'",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error enqueueing task: {str(e)}",
             )
-        
-        # Update status
-        task["status"] = "running"
-        task["started_at"] = datetime.utcnow().isoformat() + "Z"
-        
-        # Enqueue task
-        celery_app.send_task(
-            "ai_task_orchestra.execute_task",
-            args=[task_id, task["template"], task["parameters"]],
-            kwargs={},
-            priority=task["priority"],
-        )
 
 
 def get_task_service(

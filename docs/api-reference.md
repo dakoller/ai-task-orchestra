@@ -105,6 +105,53 @@ List tasks with optional filtering.
 ]
 ```
 
+#### Get Tasks by Execution Status
+
+```
+GET /tasks/status
+```
+
+Get current tasks grouped by their execution status.
+
+**Response**:
+
+```json
+{
+  "queued": [
+    {
+      "id": "task-uuid-2",
+      "status": "queued",
+      "priority": 8,
+      "created_at": "2025-08-09T10:40:00Z",
+      "template": "git-script-execution"
+    }
+  ],
+  "running": [
+    {
+      "id": "task-uuid-3",
+      "status": "running",
+      "priority": 5,
+      "created_at": "2025-08-09T10:50:00Z",
+      "started_at": "2025-08-09T10:51:00Z",
+      "template": "ollama-inference"
+    }
+  ],
+  "completed": [
+    {
+      "id": "task-uuid-1",
+      "status": "completed",
+      "priority": 5,
+      "created_at": "2025-08-09T10:30:00Z",
+      "started_at": "2025-08-09T10:32:00Z",
+      "completed_at": "2025-08-09T10:45:00Z",
+      "template": "ollama-inference"
+    }
+  ],
+  "failed": [],
+  "cancelled": []
+}
+```
+
 #### Get Task
 
 ```
